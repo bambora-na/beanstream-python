@@ -281,6 +281,19 @@ class BeanstreamTests(unittest.TestCase):
         assert resp is not None
         assert str(resp['id']) == transId
    
+    def test_get_mapped_exceptions(self):
+        gme=errors.getMappedException
+        map_dict={302: errors.RedirectionException,
+            400:errors.InvalidRequestException,
+            405:errors.InvalidRequestException,
+            415:errors.InvalidRequestException,
+            401:errors.UnAuthorizedException,
+            402:errors.BusinessRuleException,
+            403:errors.ForbiddenException,
+            }
+        for c,e in map_dict.items():
+            assert (gme(c) is e)
+    
     def test_exceptions(self):
         def test_one_exception(beanstreamexception):
             errorGenerator = errors.TestErrorGenerator(beanstreamexception())

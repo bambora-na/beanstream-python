@@ -51,7 +51,7 @@ class InternalServerException(BeanstreamApiException):#default
 def getMappedException(httpstatuscode):
    code=str(httpstatuscode)
    if code=='302':
-      return RedirectionError
+      return RedirectionException
    if code[0]=='4':
       code=code[1:]
       if code in ['00','05','15']:
