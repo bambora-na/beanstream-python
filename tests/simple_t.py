@@ -246,7 +246,7 @@ class BeanstreamTests(unittest.TestCase):
 
         # query for our transaction
         startDate = datetime.now() - timedelta(hours=1) #1 hour ago
-        endDate = datetime.now()   #now
+        endDate = datetime.now() + timedelta(hours=1)  #1 hour from now
         
         txn = self.beanstream.query_transactions()
         criteria = [Criteria(Fields.TransactionId, Operator('='), transId)]

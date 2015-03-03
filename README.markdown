@@ -15,6 +15,9 @@ The library supports:
 The library is licensed under the Apache 2.0 license
 (http://www.apache.org/licenses/LICENSE-2.0).
 
+## Install
+When you have checked out this code using Git, you then just have to navigate to the root SDK source code directory and run:
+    python setup.py install
 
 ## Getting started
 

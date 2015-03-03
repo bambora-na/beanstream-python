@@ -87,7 +87,6 @@ class TransactionReport(Report):
             'end_row': self.params['endRow'],
             'criteria':self.params['criteria']
         })
-
         
     def set_query_params(self, startDate, endDate, startRow=0, endRow=100, criteriaList=None):
         self.params['startDate'] = str(startDate.strftime('%Y-%m-%dT%H:%M:%S'))
