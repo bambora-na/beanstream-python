@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
+from __future__ import unicode_literals
 
 import decimal
 import hashlib
@@ -21,13 +22,11 @@ import random
 import string
 import base64
 import urllib
-import http.client
-from urllib.request import urlopen
-from urllib.parse import urlencode
 import time
 import json
 
 from beanstream import errors
+from beanstream.compat import get_status, HTTPSConnection, urlencode, Request, open_url, parse_qs
 from beanstream.response_codes import response_codes
 
 log = logging.getLogger('beanstream.transaction')
@@ -61,14 +60,14 @@ class Transaction(object):
         self.response_class = Response
 
         self.restful = False
-        
+
         self.params = {}
 
         self._generate_order_number()
         self.params['trnOrderNumber'] = self.order_number
         self.response_params = []
         self.request_type = None
-           
+
     def validate(self):
         pass
 
@@ -104,15 +103,15 @@ class Transaction(object):
             log.error('No API Passcode specified for url %s', self.url)
             return False
 
-        
-                
+
+
         auth = base64.b64encode( (str(self.beanstream.merchant_id)+':'+apicode).encode('utf-8') )
         passcode = 'Passcode '+str(auth.decode('utf-8'))
 
         #for testing exception handling
         if self.beanstream.testErrorGenerator is not None:
             return self.beanstream.testErrorGenerator.generateError()
-        
+
 
         if self.restful:
             return self.process_rest(passcode)           #REST API
@@ -122,11 +121,12 @@ class Transaction(object):
 
     def handle_errors(self, response):
         #non-OK response occured, return error
-        if response.status != 200:
+        status = get_status(response)
+        if status != 200:
             message = response.read()
             message = message.decode('utf-8')
-            log.error('response code not OK: %s message: ', response.status, message)
-            return errors.getMappedException(response.status)
+            log.error('response code not OK: %s message: ', status, message)
+            return errors.getMappedException(status)
         else:
             return None
 
@@ -139,7 +139,7 @@ class Transaction(object):
 
         self.populate_url()
         log.debug('Sending to %s: %s', self.url, data)
-        
+
         requestType = self.request_type
         if requestType is None:
             if data is None:
@@ -150,7 +150,7 @@ class Transaction(object):
             'Content-Type': 'application/json',
             'Authorization': passcode
         }
-        connection = http.client.HTTPSConnection('www.beanstream.com')
+        connection = HTTPSConnection('www.beanstream.com')
         try:
             connection.request(requestType, self.url, data, headers)
             response = connection.getresponse()
@@ -161,7 +161,7 @@ class Transaction(object):
 
             body = response.read()
             body = body.decode('utf-8')
-            
+
             return json.loads(body)
         finally:
             connection.close()
@@ -174,15 +174,15 @@ class Transaction(object):
         data = urlencode(self.params)
 
         log.debug('Sending to %s: %s', self.url, data)
-        request = urllib.request.Request('https://www.beanstream.com'+self.url)
+        request = Request('https://www.beanstream.com'+self.url)
         request.add_header('Authorization', passcode)
-        
-        res = urlopen(request, bytes(data, 'utf-8'))
+
+        res = open_url(request, data)
 
         errors = self.handle_errors(res)
         if errors is not None:
             return errors
-        
+
         body = res.read()
         body = body.decode('utf-8')
 
@@ -191,8 +191,8 @@ class Transaction(object):
         log.debug(response)
 
         return self.response_class(response, *self.response_params)
-    
-        
+
+
     ''' Overwrite in Restful subclasses'''
     def generateRestJson(self):
         pass
@@ -200,9 +200,9 @@ class Transaction(object):
     ''' Overwrite in Restful subclasses'''
     def populate_url(self):
         pass
-    
+
     def parse_raw_response(self, body):
-        return urllib.parse.parse_qs(body)
+        return parse_qs(body)
 
     def _generate_order_number(self):
         """ Generate a random 10-digit alphanumeric string prefixed with a timestamp.
