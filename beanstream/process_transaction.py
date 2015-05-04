@@ -16,6 +16,7 @@ limitations under the License.
 
 from datetime import datetime
 import logging
+import json
 
 from beanstream import errors, transaction
 from beanstream.response_codes import response_codes
@@ -52,6 +53,12 @@ class Purchase(transaction.Transaction):
         self.params['customerCode'] = customer_code
         self.has_customer_code = True
 
+    def set_token(self, token):
+        self.params['singleUseToken'] = token
+
+    def set_cardholder_name(self, name):
+        self.params['trnCardOwner'] = name
+        
     def set_shipping_details(self, shipping_details):
         pass
 
@@ -73,6 +80,50 @@ class Purchase(transaction.Transaction):
         else:
             self.params['customerIP'] = ip_address
 
+class RecordPurchase(Purchase):
+
+    def __init__(self, beanstream_gateway, amount, tender):
+        super(RecordPurchase, self).__init__(beanstream_gateway, amount)
+        self.restful = True
+        self.url = self.URLS['rest_payments']
+        self.params['tender'] = tender #tender type (cash or cheque)
+        
+    def generate_rest_json(self):
+        self.params['rest'] = json.dumps({
+            'amount': self.params['trnAmount'],
+            'payment_method': self.params['tender']
+        })
+
+    def populate_url(self):
+        pass #we don't modify this url
+
+    def parse_raw_response(self, body):
+        pass
+
+    def commit(self):
+        body = super(RecordPurchase, self).commit()
+        created = datetime.strptime(body['created'], '%Y-%m-%dT%H:%M:%S')
+        
+        data = {
+            'trnId': body['id'],
+            'messageId': body['message_id'],
+            'trnOrderNumber': body['order_number'],
+            'trnType': body['payment_method'],
+            'trnApproved': body['approved'],
+            'authCode': body['auth_code'],
+            'trnDate': [created.strftime('%m/%d/%Y %I:%M:%S %p')]
+        }
+        resp = PurchaseResponse(data)
+        return resp
+
+    def get_merchant_message(self):
+        return self.resp['message']
+
+    def get_cardholder_message(self):
+        return self.resp['message']
+
+    def transaction_type(self):
+        return self.resp['trnType']
 
 class PurchaseResponse(transaction.Response):
 
@@ -117,14 +168,20 @@ class PurchaseResponse(transaction.Response):
 
     def approved(self):
         ''' Boolean if the transaction was approved or not '''
-        print("approved response:" +self.resp.get('trnApproved',['0'])[0])
-        print(self.resp)
+        '''print("approved response:" +self.resp.get('trnApproved',['0'])[0])
+        print(self.resp)'''
         return self.resp.get('trnApproved',['0'])[0] == '1'
 
     def auth_code(self):
         ''' if the transaction is approved this parameter will contain a unique bank-issued code '''
         return self.resp.get('authCode', [None])[0]
 
+    def transaction_type(self):
+        ''' P = Purchase, PA = Pre-Auth, PAC = Pre-Auth Complete, VP = Void Payment '''
+        return self.resp.get('trnType', [None])[0]
+
+    def get_whole_response(self):
+        return str(self.resp)
 
 class PreAuthorization(Purchase):
 
@@ -134,7 +191,7 @@ class PreAuthorization(Purchase):
         self.params['trnType'] = self.TRN_TYPES['preauth']
 
 
-class Adjustment(transaction.Transaction):
+class Adjustment(Purchase):
 
     RETURN = 'R'
     VOID = 'V'
@@ -143,13 +200,13 @@ class Adjustment(transaction.Transaction):
     VOID_PURCHASE = 'VP'
 
     def __init__(self, beanstream_gateway, adjustment_type, transaction_id, amount):
-        super(PreAuthorizationCompletion, self).__init__(beanstream_gateway)
-
-        if not beanstream_gateway.HASH_VALIDATION and not beanstream_gateway.USERNAME_VALIDATION:
-            raise errors.ConfigurationException('adjustments must be performed with either hash or username/password validation')
-
+        super(Adjustment, self).__init__(beanstream_gateway, amount)
+		
         if adjustment_type not in [self.RETURN, self.VOID, self.PREAUTH_COMPLETION, self.VOID_RETURN, self.VOID_PURCHASE]:
             raise errors.ConfigurationException('invalid adjustment_type specified: %s' % adjustment_type)
+
+        #self.response_class = PurchaseResponse
+        #self.url = self.URLS['process_transaction']
 
         self.params['trnType'] = adjustment_type
         self.params['adjId'] = transaction_id

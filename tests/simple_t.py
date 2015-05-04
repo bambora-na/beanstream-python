@@ -78,6 +78,77 @@ class BeanstreamTests(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_basic_example(self):
+        beanstream = gateway.Beanstream()
+        beanstream.configure(
+                '300200578',
+                payment_passcode='4BaD82D9197b4cc4b70a221911eE9f70')
+        card = billing.CreditCard(
+            'John Doe',
+            '4030000010001234',
+            '03',
+            '2019',
+            '123')
+        trans = beanstream.purchase(51.32, card)
+        resp = trans.commit()
+        assert resp.approved()
+        
+    def test_returns(self):
+        beanstream = gateway.Beanstream()
+        beanstream.configure(
+                '300200578',
+                payment_passcode='4BaD82D9197b4cc4b70a221911eE9f70')
+        card = billing.CreditCard(
+            'John Doe',
+            '4030000010001234',
+            '03',
+            '2019',
+            '123')
+        trans = beanstream.purchase(12.99, card)
+        resp = trans.commit()
+        assert resp.approved()
+        
+        resp = beanstream.return_purchase(resp.transaction_id(), 12.99)
+
+    def test_voids(self):
+        beanstream = gateway.Beanstream()
+        beanstream.configure(
+                '300200578',
+                payment_passcode='4BaD82D9197b4cc4b70a221911eE9f70')
+        card = billing.CreditCard(
+            'John Doe',
+            '4030000010001234',
+            '03',
+            '2019',
+            '123')
+        trans = beanstream.purchase(12.99, card)
+        resp = trans.commit()
+        assert resp.approved()
+        
+        resp = beanstream.void_purchase(resp.transaction_id(), 12.99)
+        
+    def test_basic_preauth_example(self):
+        print("\n\ntest_basic_preauth_example")
+        beanstream = gateway.Beanstream()
+        beanstream.configure(
+                '300200578',
+                payment_passcode='4BaD82D9197b4cc4b70a221911eE9f70')
+        card = billing.CreditCard(
+            'John Doe',
+            '4030000010001234',
+            '03',
+            '2019',
+            '123')
+        trans = beanstream.preauth(51.32, card)
+        resp = trans.commit()
+        assert resp.approved()
+        assert resp.transaction_type() == 'PA'
+        trans2 = beanstream.preauth_completion(resp.transaction_id(), 25.00)
+        resp2 = trans2.commit()
+        
+        assert resp2.approved()
+        assert resp2.transaction_type() == 'PAC'
+        
     def test_successful_cc_purchase(self):
         today = date.today()
         visa = self.approved_cards['visa']
@@ -93,6 +164,50 @@ class BeanstreamTests(unittest.TestCase):
         assert resp.approved()
         assert resp.cvd_status() == 'CVD Match'
 
+    def test_legato_token_purchase(self):
+
+        # 1) get token (this should normally be done in the client app or browser)
+        token = self.beanstream.get_legato_token('4030000010001234' , '03', '19', '123')
+
+        # 2) make purchase
+        txn = self.beanstream.purchase_with_token(22.13, token)
+        txn.set_cardholder_name("Gizmo")
+        resp = txn.commit()
+        assert resp.approved()
+        assert resp.transaction_type() == 'P'
+
+        # Pre-Auth and Completion
+        token = self.beanstream.get_legato_token('4030000010001234' , '03', '19', '123')
+        txn = self.beanstream.preauth_with_token(50.0, token)
+        txn.set_cardholder_name("Gizmo")
+        resp = txn.commit()
+        
+        assert resp.approved()
+        assert resp.transaction_type() == 'PA'
+        trans2 = self.beanstream.preauth_completion(resp.transaction_id(), 25.00)
+        resp2 = trans2.commit()
+        
+        assert resp2.approved()
+        assert resp2.transaction_type() == 'PAC'
+
+    def test_tender_purchase(self):
+
+        #Note that these options do not store any additional data beyond amount
+        # If you save address, comments, or anything they will not save!
+        
+        ''' cash '''
+        txn = self.beanstream.record_cash_purchase(20)
+        resp = txn.commit()
+        assert resp.approved()
+        assert resp.transaction_type() == 'C'
+
+        ''' cheque '''
+        txn = self.beanstream.record_cheque_purchase(50.0)
+        resp = txn.commit()
+        assert resp.approved()
+        print("Time: "+str(resp.transaction_datetime()))
+        
+        
     def test_failed_cvd(self):
         today = date.today()
         visa = self.approved_cards['visa']
@@ -168,6 +283,17 @@ class BeanstreamTests(unittest.TestCase):
         resp = txn.commit()
         assert resp.approved()
 
+        # preauth
+        txn = self.beanstream.preauth_profile(60, customer_code)
+        resp = txn.commit()
+        assert resp.approved()
+        assert resp.transaction_type() == 'PA'
+        trans2 = self.beanstream.preauth_completion(resp.transaction_id(), 25.00)
+        resp2 = trans2.commit()
+        assert resp2.approved()
+        assert resp2.transaction_type() == 'PAC'
+        
+        #disable profile
         txn = self.beanstream.modify_payment_profile(customer_code)
         txn.set_status('disabled')
         resp = txn.commit()
@@ -177,6 +303,8 @@ class BeanstreamTests(unittest.TestCase):
         txn.set_comments('test_payment_profiles-purchase_with_payment_profile')
         resp = txn.commit()
         assert not resp.approved()
+
+        
 
     def test_payment_profile_from_recurring_billing(self):
         today = date.today()

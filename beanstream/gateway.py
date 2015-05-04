@@ -15,6 +15,7 @@ limitations under the License.
 '''
 
 from beanstream import errors, payment_profiles, process_transaction, recurring_billing, reports
+import http.client, json
 
 class Beanstream(object):
 
@@ -94,6 +95,17 @@ class Beanstream(object):
 
         return txn
 
+    def preauth_profile(self, amount, customer_code, billing_address=None):
+        """ Returns a PreAuthorization object with the specified options.
+        """
+        txn = process_transaction.PreAuthorization(self, amount)
+        txn.set_customer_code(customer_code)
+        if billing_address:
+            txn.set_billing_address(billing_address)
+
+        return txn
+    
+
     def preauth_completion(self, transaction_id, amount):
         """ Returns an Adjustment object configured for completing the
         preauthorized transaction for the specified amount.
@@ -143,6 +155,32 @@ class Beanstream(object):
         txn.set_customer_code(customer_code)
         return txn
 
+    def purchase_with_token(self, amount, token):
+        """ Returns a Purchase object with the specified options.
+        """
+        txn = process_transaction.Purchase(self, amount)
+        txn.set_token(token)
+        return txn
+    
+    def preauth_with_token(self, amount, token):
+        """ Returns a PreAuthorization object with the specified options.
+        """
+        txn = process_transaction.PreAuthorization(self, amount)
+        txn.set_token(token)
+        return txn
+
+    def record_cash_purchase(self, amount):
+        """ Returns a Purchase object with the specified options.
+        """
+        txn = process_transaction.RecordPurchase(self, amount, 'cash')
+        return txn
+
+    def record_cheque_purchase(self, amount):
+        """ Returns a Purchase object with the specified options.
+        """
+        txn = process_transaction.RecordPurchase(self, amount, 'cheque')
+        return txn
+    
     def create_recurring_billing_account_from_payment_profile(self, amount,
             customer_code, frequency_period, frequency_increment):
         """ Returns a CreateRecurringBillingAccount object with the specified
@@ -190,4 +228,25 @@ class Beanstream(object):
         txn.set_transaction_id(transId)
         return txn
 
+    """ Get a legato token for a credit card.
+     You should never call this from your server, but from the client instead.
+     It is here just for testing purposes.
+    """
+    def get_legato_token(self, card_number, expiry_month, expiry_year, cvd):
+        data = json.dumps({'number':'4030000010001234' , 'expiry_month':'03', 'expiry_year':'19', 'cvd':'123'})
+        headers={
+            'Content-Type': 'application/json'
+        }
+        connection = http.client.HTTPSConnection('www.beanstream.com')
+        result = None
+        try:
+            connection.request('POST', '/scripts/tokenization/tokens', data, headers)
+            response = connection.getresponse()
+            body = response.read()
+            body = body.decode('utf-8')
+            
+            result = json.loads(body)
+        finally:
+            connection.close()
+        return str(result['token'])
 
