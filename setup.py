@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='beanstream',
-    version='1.0.0rc1',
+    version='1.0.0rc3',
     description='Beanstream SDK library for processing credit card payments.',
 	author='Upverter Inc and Beanstream',
 	author_email='devsupport@beanstream.com',
@@ -13,7 +13,7 @@ setup(
     packages=['beanstream'],
 	license='Apache2',
 	url='https://github.com/Beanstream-DRWP/beanstream-python',
-	download_url='https://github.com/Beanstream-DRWP/beanstream-python/tarball/1.0.0rc1',
+	download_url='https://github.com/Beanstream-DRWP/beanstream-python/tarball/1.0.0rc3',
 	keywords=['payments','credit card','ecommerce','tokenization','direct deposit','reporting'],
 	classifiers=[]
 )
