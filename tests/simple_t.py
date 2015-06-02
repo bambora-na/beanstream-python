@@ -92,7 +92,8 @@ class BeanstreamTests(unittest.TestCase):
         trans = beanstream.purchase(51.32, card)
         resp = trans.commit()
         assert resp.approved()
-        
+
+
     def test_returns(self):
         beanstream = gateway.Beanstream()
         beanstream.configure(
@@ -195,13 +196,13 @@ class BeanstreamTests(unittest.TestCase):
         #Note that these options do not store any additional data beyond amount
         # If you save address, comments, or anything they will not save!
         
-        ''' cash '''
+        # cash
         txn = self.beanstream.record_cash_purchase(20)
         resp = txn.commit()
         assert resp.approved()
         assert resp.transaction_type() == 'C'
 
-        ''' cheque '''
+        # cheque
         txn = self.beanstream.record_cheque_purchase(50.0)
         resp = txn.commit()
         assert resp.approved()
@@ -304,7 +305,55 @@ class BeanstreamTests(unittest.TestCase):
         resp = txn.commit()
         assert not resp.approved()
 
+
+        card = billing.CreditCard('John Doe', '5100000010001004', '3', '2019', '123')
+        txn = self.beanstream.add_card_to_payment_profile(customer_code, card)
+        resp = txn.commit()
+        assert resp['message'] == 'Operation Successful'
+
+        txn = self.beanstream.get_cards_from_payment_profile(customer_code)
+        resp = txn.commit()
+        assert len(resp['card']) == 2
+
+        card = billing.CreditCard('John Doe', '5100XXXXXXXX1004', '06', '2019', '123')
+        txn = self.beanstream.update_card_on_payment_profile(customer_code, 2, card)
+        resp = txn.commit()
+        assert resp['message'] == 'Operation Successful'
+        txn = self.beanstream.get_cards_from_payment_profile(customer_code)
+        resp = txn.commit()
+        assert len(resp['card']) == 2
+        assert resp['card'][1]['expiry_month'] == '06'
+
+        txn = self.beanstream.delete_card_on_payment_profile(customer_code, 2)
+        resp = txn.commit()
+        assert resp['message'] == 'Operation Successful'
+        txn = self.beanstream.get_cards_from_payment_profile(customer_code)
+        resp = txn.commit()
+        assert len(resp['card']) == 1
         
+        txn = self.beanstream.modify_payment_profile(customer_code)
+        txn.set_status('disabled')
+        resp = txn.commit()
+        assert resp.approved()
+
+        txn = self.beanstream.purchase_with_payment_profile(50, customer_code)
+        txn.set_comments('test_payment_profiles-purchase_with_payment_profile')
+        resp = txn.commit()
+        assert not resp.approved()
+
+        txn = self.beanstream.get_payment_profile(customer_code)
+        resp = txn.commit()
+        assert resp.customer_code() == customer_code
+        
+        txn = self.beanstream.delete_payment_profile(customer_code)
+        resp = txn.commit()
+        assert resp['message'] == 'Operation Successful'
+
+        token = self.beanstream.get_legato_token('4030000010001234', '03', '20', '123')
+        txn = self.beanstream.create_payment_profile_from_token(token)
+        print("+++++++++++++++++++++++++++++++++++++++++")
+        assert resp['message'] == 'Operation Successful'
+        #assert resp.approved()
 
     def test_payment_profile_from_recurring_billing(self):
         today = date.today()
@@ -408,7 +457,8 @@ class BeanstreamTests(unittest.TestCase):
 
         assert resp is not None
         assert str(resp['id']) == transId
-   
+    
+
     def test_get_mapped_exceptions(self):
         gme=errors.getMappedException
         map_dict={302: errors.RedirectionException,
@@ -421,7 +471,32 @@ class BeanstreamTests(unittest.TestCase):
             }
         for c,e in map_dict.items():
             assert (gme(c) is e)
-    
+            
+    def test_get_legato_token(self):
+        # 1) this should normally be done in the client app or browser
+        token = self.beanstream.get_legato_token('4030000010001234' , '03', '19', '123')
+        print("Token: ", token)
+
+    def test_tender_purchase(self):
+
+        #Note that these options do not store any additional data beyond amount
+        # If you save address, comments, or anything they will not save!
+        
+        # cash
+        txn = self.beanstream.record_cash_purchase(20)
+        resp = txn.commit()
+        assert resp.approved()
+        assert resp.transaction_type() == 'C'
+
+        # cheque
+        txn = self.beanstream.record_cheque_purchase(50.0)
+        resp = txn.commit()
+        assert resp.approved()
+        print("Time: "+str(resp.transaction_datetime()))
+
+        
+# insert above here
+
     def test_exceptions(self):
         def test_one_exception(beanstreamexception):
             errorGenerator = errors.TestErrorGenerator(beanstreamexception())

@@ -41,7 +41,8 @@ class Transaction(object):
         'report_download'       : '/scripts/report_download.asp',
         'report'                : '/scripts/report.aspx',
         'rest_payments'         : '/api/v1/payments',
-        'rest_reports'          : '/api/v1/reports'
+        'rest_reports'          : '/api/v1/reports',
+        'rest_profiles'         : '/api/v1/profiles'
     }
 
     TRN_TYPES = {
@@ -96,6 +97,8 @@ class Transaction(object):
             apicode = self.beanstream.payment_profile_passcode
         elif (self.url == self.URLS['rest_payments']):
             apicode = self.beanstream.payment_passcode
+        elif (self.url == self.URLS['rest_profiles']):
+            apicode = self.beanstream.payment_profile_passcode
         else:
             apicode = self.beanstream.reporting_passcode
 
@@ -139,6 +142,7 @@ class Transaction(object):
 
         self.populate_url()
         log.debug('Sending to %s: %s', self.url, data)
+        '''print('Sending to ', 'https://www.beanstream.com'+self.url, data)'''
 
         requestType = self.request_type
         if requestType is None:
@@ -173,7 +177,9 @@ class Transaction(object):
     def process_query_param(self, passcode):
         data = urlencode(self.params)
 
-        log.debug('Sending to %s: %s', self.url, data)
+        '''print('Sending to ', 'https://www.beanstream.com'+self.url, data)'''
+        
+        log.debug('Sending to ', 'https://www.beanstream.com'+self.url, data)
         request = Request('https://www.beanstream.com'+self.url)
         request.add_header('Authorization', passcode)
 

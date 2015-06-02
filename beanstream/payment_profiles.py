@@ -15,7 +15,7 @@ limitations under the License.
 '''
 
 import logging
-
+import json
 from beanstream import billing, errors, transaction
 from beanstream.response_codes import response_codes
 
@@ -85,6 +85,15 @@ class CreatePaymentProfile(PaymentProfileTransaction):
         self.params['operationType'] = 'N'
         self.params.update(card.params())
 
+class CreatePaymentProfileFromToken(PaymentProfileTransaction):
+
+    def __init__(self, beanstream, token):
+        super(CreatePaymentProfileFromToken, self).__init__(beanstream)
+
+        self.params['operationType'] = 'N'
+        self.params['singleUseToken'] = token
+
+
 
 class ModifyPaymentProfile(PaymentProfileTransaction):
 
@@ -103,7 +112,177 @@ class GetPaymentProfile(PaymentProfileTransaction):
         self.params['operationType'] = 'Q'
         self.set_customer_code(customer_code)
 
+'''
+Delete Profile uses REST
+'''
+class DeletePaymentProfile(transaction.Transaction):
 
+    def __init__(self, beanstream, customer_code):
+        super(DeletePaymentProfile, self).__init__(beanstream)
+        self.url = self.URLS['rest_profiles']
+        self.response_class = PaymentProfileResponse
+
+        self.restful = True #we send RESTful requests for deleting profiles and updating a profile's cards
+        self.request_type = 'DELETE'
+
+        self.params['customerCode'] = customer_code
+        
+        if not self.beanstream.payment_profile_passcode:
+            raise errors.ConfigurationException('payment profile passcode must be specified to create or modify payment profiles')
+
+        self.params['merchantId'] = self.beanstream.merchant_id
+        self.params['passCode'] = self.beanstream.payment_profile_passcode
+
+    def parse_raw_response(self, body):
+        pass
+
+    def populate_url(self):
+        #add the profile id to the url
+        self.url = self.url+'/'+str(self.params['customerCode'])
+
+    def generate_rest_json(self):
+        self.params['rest'] = ''
+
+class AddCard(transaction.Transaction):
+
+    def __init__(self, beanstream, customer_code, card):
+        super(AddCard, self).__init__(beanstream)
+        self.url = self.URLS['rest_profiles']
+        self.response_class = PaymentProfileResponse
+        self.card = card
+
+        self.restful = True
+        self.request_type = 'POST'
+
+        self.params['customerCode'] = customer_code
+        
+        if not self.beanstream.payment_profile_passcode:
+            raise errors.ConfigurationException('payment profile passcode must be specified to create or modify payment profiles')
+
+        self.params['merchantId'] = self.beanstream.merchant_id
+        self.params['passCode'] = self.beanstream.payment_profile_passcode
+
+    def parse_raw_response(self, body):
+        pass
+
+    def populate_url(self):
+        #add the profile id to the url
+        self.url = self.url+'/'+str(self.params['customerCode'])+'/cards'
+
+    def generate_rest_json(self):
+        self.params['rest'] = json.dumps({
+            'card': {
+                'number': self.card.number,
+                'expiry_month': self.card.exp_month,
+                'expiry_year': self.card.exp_year,
+                'cvd': self.card.cvd
+            }
+        })
+
+class GetAllCards(transaction.Transaction):
+
+    def __init__(self, beanstream, customer_code):
+        super(GetAllCards, self).__init__(beanstream)
+        self.url = self.URLS['rest_profiles']
+        self.response_class = PaymentProfileResponse
+
+        self.restful = True
+        self.request_type = 'GET'
+
+        self.params['customerCode'] = customer_code
+        
+        if not self.beanstream.payment_profile_passcode:
+            raise errors.ConfigurationException('payment profile passcode must be specified to create or modify payment profiles')
+
+        self.params['merchantId'] = self.beanstream.merchant_id
+        self.params['passCode'] = self.beanstream.payment_profile_passcode
+
+    def parse_raw_response(self, body):
+        pass
+
+    def populate_url(self):
+        #add the profile id to the url
+        self.url = self.url+'/'+str(self.params['customerCode'])+'/cards'
+
+    def generate_rest_json(self):
+        self.params['rest'] = ''
+
+
+class UpdateCard(transaction.Transaction):
+
+    def __init__(self, beanstream, customer_code, card_id, card):
+        super(UpdateCard, self).__init__(beanstream)
+        self.url = self.URLS['rest_profiles']
+        self.response_class = PaymentProfileResponse
+        self.card = card
+        self.card_id = card_id
+
+        self.restful = True
+        self.request_type = 'PUT'
+
+        self.params['customerCode'] = customer_code
+        
+        if not self.beanstream.payment_profile_passcode:
+            raise errors.ConfigurationException('payment profile passcode must be specified to create or modify payment profiles')
+
+        self.params['merchantId'] = self.beanstream.merchant_id
+        self.params['passCode'] = self.beanstream.payment_profile_passcode
+
+    def parse_raw_response(self, body):
+        pass
+
+    def populate_url(self):
+        #add the profile id to the url
+        self.url = self.url+'/'+str(self.params['customerCode'])+'/cards/'+str(self.card_id)
+
+    def generate_rest_json(self):
+        if "X" not in self.card.number :
+            self.params['rest'] = json.dumps({
+                'card': {
+                    'number': self.card.number,
+                    'expiry_month': self.card.exp_month,
+                    'expiry_year': self.card.exp_year,
+                    'cvd': self.card.cvd
+                }
+            })
+        else: #ignore card number since it is masked
+            self.params['rest'] = json.dumps({
+                'card': {
+                    'expiry_month': self.card.exp_month,
+                    'expiry_year': self.card.exp_year,
+                    'cvd': self.card.cvd
+                }
+            })
+
+class DeleteCard(transaction.Transaction):
+
+    def __init__(self, beanstream, customer_code, card_id):
+        super(DeleteCard, self).__init__(beanstream)
+        self.url = self.URLS['rest_profiles']
+        self.response_class = PaymentProfileResponse
+        self.card_id = card_id
+
+        self.restful = True
+        self.request_type = 'DELETE'
+
+        self.params['customerCode'] = customer_code
+        
+        if not self.beanstream.payment_profile_passcode:
+            raise errors.ConfigurationException('payment profile passcode must be specified to create or modify payment profiles')
+
+        self.params['merchantId'] = self.beanstream.merchant_id
+        self.params['passCode'] = self.beanstream.payment_profile_passcode
+
+    def parse_raw_response(self, body):
+        pass
+
+    def populate_url(self):
+        #add the profile id to the url
+        self.url = self.url+'/'+str(self.params['customerCode'])+'/cards/'+str(self.card_id)
+
+    def generate_rest_json(self):
+        self.params['rest'] = ''
+        
 class PaymentProfileResponse(transaction.Response):
 
     field_name_mapping = {

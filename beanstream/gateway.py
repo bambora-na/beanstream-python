@@ -129,18 +129,45 @@ class Beanstream(object):
 
         return txn
 
+    def create_payment_profile_from_token(self, token, billing_address=None):
+        """ Returns a CreatePaymentProfile object with the specified options.
+        """
+        txn = payment_profiles.CreatePaymentProfileFromToken(self, token)
+        if billing_address:
+            txn.set_billing_address(billing_address)
+
+        return txn
+
     def modify_payment_profile(self, customer_code):
         """ Returns a ModifyPaymentProfile object with the specified options.
         """
         txn = payment_profiles.ModifyPaymentProfile(self, customer_code)
         return txn
 
+    def delete_payment_profile(self, customer_code):
+        txn = payment_profiles.DeletePaymentProfile(self, customer_code)
+        return txn
+
     def get_payment_profile(self, customer_code):
-        """ Returns a GetPaymentProfile object with the specified options.
-        """
         txn = payment_profiles.GetPaymentProfile(self, customer_code)
         return txn
 
+    def add_card_to_payment_profile(self, customer_code, card):
+        txn = payment_profiles.AddCard(self, customer_code, card)
+        return txn
+
+    def get_cards_from_payment_profile(self, customer_code):
+        txn = payment_profiles.GetAllCards(self, customer_code)
+        return txn
+
+    def update_card_on_payment_profile(self, customer_code, card_id, card):
+        txn = payment_profiles.UpdateCard(self, customer_code, card_id, card)
+        return txn
+
+    def delete_card_on_payment_profile(self, customer_code, card_id):
+        txn = payment_profiles.DeleteCard(self, customer_code, card_id)
+        return txn
+    
     def purchase_with_payment_profile(self, amount, customer_code):
         """ Returns a Purchase object with the specified options.
         """
@@ -233,7 +260,7 @@ class Beanstream(object):
      It is here just for testing purposes.
     """
     def get_legato_token(self, card_number, expiry_month, expiry_year, cvd):
-        data = json.dumps({'number':'4030000010001234' , 'expiry_month':'03', 'expiry_year':'19', 'cvd':'123'})
+        data = json.dumps({'number':card_number , 'expiry_month':expiry_month, 'expiry_year':expiry_year, 'cvd':cvd})
         headers={
             'Content-Type': 'application/json'
         }
