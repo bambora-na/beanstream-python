@@ -169,7 +169,7 @@ class BeanstreamTests(unittest.TestCase):
 
         # 1) get token (this should normally be done in the client app or browser)
         token = self.beanstream.get_legato_token('4030000010001234' , '03', '19', '123')
-
+        
         # 2) make purchase
         txn = self.beanstream.purchase_with_token(22.13, token)
         txn.set_cardholder_name("Gizmo")

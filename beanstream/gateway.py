@@ -15,7 +15,8 @@ limitations under the License.
 '''
 
 from beanstream import errors, payment_profiles, process_transaction, recurring_billing, reports
-import http.client, json
+from beanstream.compat import HTTPSConnection
+import json
 
 class Beanstream(object):
 
@@ -264,7 +265,7 @@ class Beanstream(object):
         headers={
             'Content-Type': 'application/json'
         }
-        connection = http.client.HTTPSConnection('www.beanstream.com')
+        connection = HTTPSConnection('www.beanstream.com')
         result = None
         try:
             connection.request('POST', '/scripts/tokenization/tokens', data, headers)
