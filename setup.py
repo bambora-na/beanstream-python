@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
   name='beanstream',
-  version='1.0.0rc4',
+  version='1.0.0',
   description='Beanstream SDK library for processing credit card payments.',
 	author='Upverter Inc and Beanstream',
 	author_email='support@beanstream.com',
