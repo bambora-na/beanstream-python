@@ -65,6 +65,9 @@ class PaymentProfileTransaction(transaction.Transaction):
     def set_status_id(self, status_id):
         self.params['statusIdentity'] = status_id
 
+    def set_card_owner(self, card_owner):
+        self.params['trnCardOwner'] = card_owner
+
     def set_status(self, status):
         status = status.lower()
 
@@ -92,7 +95,6 @@ class CreatePaymentProfileFromToken(PaymentProfileTransaction):
 
         self.params['operationType'] = 'N'
         self.params['singleUseToken'] = token
-
 
 
 class ModifyPaymentProfile(PaymentProfileTransaction):

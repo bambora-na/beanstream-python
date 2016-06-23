@@ -60,8 +60,7 @@ Ex. Making a one off credit card transaction:
 
 ## Running tests
 
-To run the library test a file named beanstream.cfg in the current directory.
-Then run the command `nosetests tests/simple_t.py`.
+Run the command `nosetests test.py`.
 
 The tests attempt to make requests against the Beanstream API using the test
 credit cards given for sandbox use.
@@ -83,4 +82,4 @@ Example config file:
     recurring_billing_passcode=D5A56B15F58d404681aC1DE1C3fE80c4
 
 ## Example Code
-To see working examples of payments, recurring billing, payment profiles, and reporting, take a look at tests/simple_t.py
+To see working examples of payments, recurring billing, payment profiles, and reporting, take a look at test.py

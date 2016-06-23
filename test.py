@@ -2,6 +2,7 @@ import configparser
 from datetime import date, datetime, timedelta
 import unittest
 import logging
+from pprint import pprint
 
 from beanstream import gateway
 from beanstream import billing
@@ -16,7 +17,7 @@ class BeanstreamTests(unittest.TestCase):
         log.setLevel(logging.getLevelName('WARNING'))
         
         config = configparser.ConfigParser()
-        config.read('beanstream.cfg')
+        config.read('./tests/beanstream.cfg')
         merchant_id = config.get('beanstream', 'merchant_id')
 
         payment_passcode = None
@@ -350,10 +351,29 @@ class BeanstreamTests(unittest.TestCase):
         assert resp['message'] == 'Operation Successful'
 
         token = self.beanstream.get_legato_token('4030000010001234', '03', '20', '123')
-        txn = self.beanstream.create_payment_profile_from_token(token)
-        print("+++++++++++++++++++++++++++++++++++++++++")
-        assert resp['message'] == 'Operation Successful'
-        #assert resp.approved()
+        address = billing.Address(
+            'John Doe',
+            'john.doe@example.com',
+            '555-555-5555',
+            '123 Fake Street',
+            '',
+            'Fake City',
+            'ON',
+            'A1A1A1',
+            'CA')
+        txn = self.beanstream.create_payment_profile_from_token(token, address)
+        txn.set_card_owner('Joe Python')
+        resp = txn.commit()
+        pprint (vars(resp))
+        assert resp.get_message() == 'Operation Successful'
+
+        print("customer code %s" %resp.customer_code())
+        txn = self.beanstream.purchase_with_payment_profile(50, resp.customer_code())
+        txn.set_comments('test_payment_profiles-purchase_with_payment_profile_token')
+        resp = txn.commit()
+        print("profile purchase response: %s" %resp.get_whole_response())
+        pprint (vars(resp))
+        assert resp.approved()
 
     def test_payment_profile_from_recurring_billing(self):
         today = date.today()
