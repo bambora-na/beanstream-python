@@ -179,7 +179,7 @@ class Transaction(object):
 
         '''print('Sending to ', 'https://www.beanstream.com'+self.url, data)'''
         
-        log.debug('Sending to ', 'https://www.beanstream.com'+self.url, data)
+        log.debug('Sending to %s: %s', self.url, data)
         request = Request('https://www.beanstream.com'+self.url)
         request.add_header('Authorization', passcode)
 
