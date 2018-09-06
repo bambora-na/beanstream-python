@@ -265,7 +265,7 @@ class Beanstream(object):
         headers={
             'Content-Type': 'application/json'
         }
-        connection = HTTPSConnection('dev.na.bambora.com')
+        connection = HTTPSConnection('www.beanstream.com')
         result = None
         try:
             connection.request('POST', '/scripts/tokenization/tokens', data, headers)

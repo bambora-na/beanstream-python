@@ -1,9 +1,9 @@
 response_codes = {
   "0": {
     "type": "test",
-    "cardholder_message": "ERROR",
+    "cardholder_message": "Authorization Failed",
     "approved": False,
-    "merchant_message": "ERROR",
+    "merchant_message": "Authorization Failed",
   },
   "1114": {
     "type": "Desjardins",
