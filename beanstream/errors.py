@@ -47,6 +47,9 @@ class ForbiddenException(BeanstreamApiException):#HTTP status code 403
 class InternalServerException(BeanstreamApiException):#default
    pass
 
+class NotFoundException(BeanstreamApiException):
+    pass
+
 
 def getMappedException(httpstatuscode):
    code=str(httpstatuscode)
@@ -61,7 +64,8 @@ def getMappedException(httpstatuscode):
          error_dict={
             '1':UnAuthorizedException,
             '2':BusinessRuleException,
-            '3':ForbiddenException
+            '3':ForbiddenException,
+            '4':NotFoundException,
             }
          if code in error_dict:
             return error_dict[code]
