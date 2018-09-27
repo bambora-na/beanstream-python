@@ -1,4 +1,4 @@
-## Beanstream Python API
+## Bambora Python API
 
 The goal of this library is to provide a python implementation of the
 Beanstream API.
@@ -18,6 +18,9 @@ The library is licensed under the Apache 2.0 license
 ## Install
 When you have checked out this code using Git, you then just have to navigate to the root SDK source code directory and run:
     python setup.py install
+
+## TLS 1.2 support
+For testing instructions with our TLS1.2-only server, please refer to our [developer portal](https://dev.na.bambora.com/docs/references/payment_SDKs/support_tls12/#python-sdk)
 
 ## Getting started
 
