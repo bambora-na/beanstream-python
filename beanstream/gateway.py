@@ -271,6 +271,7 @@ class Beanstream(object):
             connection.request('POST', '/scripts/tokenization/tokens', data, headers)
             response = connection.getresponse()
             body = response.read()
+            print(body)
             body = body.decode('utf-8')
             
             result = json.loads(body)

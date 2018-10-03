@@ -31,6 +31,9 @@ from beanstream.response_codes import response_codes
 
 log = logging.getLogger('beanstream.transaction')
 
+#ENDPOINT = 'https://www.beanstream.com'
+ENDPOINT_DOMAIN = 'api.na.bambora.com'
+ENDPOINT = 'https://%s' % ENDPOINT_DOMAIN
 
 class Transaction(object):
 
@@ -108,8 +111,9 @@ class Transaction(object):
 
 
 
-        auth = base64.b64encode( (str(self.beanstream.merchant_id)+':'+apicode).encode('utf-8') )
-        passcode = 'Passcode '+str(auth.decode('utf-8'))
+        #auth = base64.b64encode( (str(self.beanstream.merchant_id)+':'+apicode).encode('utf-8') )
+        #passcode = 'Passcode '+str(auth.decode('utf-8'))
+        passcode = apicode
 
         #for testing exception handling
         if self.beanstream.testErrorGenerator is not None:
@@ -128,8 +132,8 @@ class Transaction(object):
         if status != 200:
             message = response.read()
             message = message.decode('utf-8')
-            log.error('response code not OK: %s message: ', status, message)
-            return errors.getMappedException(status)
+            log.error('response code not OK: %s message: %s', status, message)
+            return errors.getMappedException(status)(message)
         else:
             return None
 
@@ -141,8 +145,6 @@ class Transaction(object):
         data = self.params['rest']
 
         self.populate_url()
-        log.debug('Sending to %s: %s', self.url, data)
-        '''print('Sending to ', 'https://www.beanstream.com'+self.url, data)'''
 
         requestType = self.request_type
         if requestType is None:
@@ -152,9 +154,11 @@ class Transaction(object):
                 requestType = 'POST'
         headers={
             'Content-Type': 'application/json',
-            'Authorization': passcode
+            #'Authorization': passcode
         }
-        connection = HTTPSConnection('www.beanstream.com')
+        connection = HTTPSConnection(ENDPOINT_DOMAIN)
+        url = '%s?passcode=%s' % (self.url, passcode)
+        log.debug('Sending to %s: %s', url, data)
         try:
             connection.request(requestType, self.url, data, headers)
             response = connection.getresponse()
@@ -176,12 +180,10 @@ class Transaction(object):
     '''
     def process_query_param(self, passcode):
         data = urlencode(self.params)
-
-        '''print('Sending to ', 'https://www.beanstream.com'+self.url, data)'''
-        
-        log.debug('Sending to ', 'https://www.beanstream.com'+self.url, data)
-        request = Request('https://www.beanstream.com'+self.url)
-        request.add_header('Authorization', passcode)
+        url = '%s%s?passcode=%s' % (ENDPOINT, self.url, passcode)
+        log.debug('Sending to ', '%s%s' % (ENDPOINT, url), data)
+        request = Request(url)
+        #request.add_header('Authorization', passcode)
 
         res = open_url(request, data)
 
