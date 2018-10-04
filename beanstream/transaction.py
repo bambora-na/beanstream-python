@@ -177,8 +177,6 @@ class Transaction(object):
     def process_query_param(self, passcode):
         data = urlencode(self.params)
 
-        '''print('Sending to ', 'https://www.beanstream.com'+self.url, data)'''
-        
         log.debug('Sending to ', 'https://www.beanstream.com'+self.url, data)
         request = Request('https://www.beanstream.com'+self.url)
         request.add_header('Authorization', passcode)
@@ -272,4 +270,3 @@ class Response(object):
             self.resp.get('ref4', [None])[0],
             self.resp.get('ref5', [None])[0],
         ]
-
