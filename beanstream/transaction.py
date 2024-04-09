@@ -40,9 +40,9 @@ class Transaction(object):
         'payment_profile'       : '/scripts/payment_profile.asp',
         'report_download'       : '/scripts/report_download.asp',
         'report'                : '/scripts/report.aspx',
-        'rest_payments'         : '/api/v1/payments',
-        'rest_reports'          : '/api/v1/reports',
-        'rest_profiles'         : '/api/v1/profiles'
+        'rest_payments'         : '/v1/payments',
+        'rest_reports'          : '/v1/reports',
+        'rest_profiles'         : '/v1/profiles'
     }
 
     TRN_TYPES = {
@@ -142,7 +142,7 @@ class Transaction(object):
 
         self.populate_url()
         log.debug('Sending to %s: %s', self.url, data)
-        '''print('Sending to ', 'https://www.beanstream.com'+self.url, data)'''
+        '''print('Sending to ', 'https://api.na.bambora.com'+self.url, data)'''
 
         requestType = self.request_type
         if requestType is None:
@@ -154,7 +154,7 @@ class Transaction(object):
             'Content-Type': 'application/json',
             'Authorization': passcode
         }
-        connection = HTTPSConnection('www.beanstream.com')
+        connection = HTTPSConnection('api.na.bambora.com')
         try:
             connection.request(requestType, self.url, data, headers)
             response = connection.getresponse()
@@ -178,7 +178,7 @@ class Transaction(object):
         data = urlencode(self.params)
 
         log.debug('Sending to %s: %s', self.url, data)
-        request = Request('https://www.beanstream.com'+self.url)
+        request = Request('https://web.na.bambora.com'+self.url)
         request.add_header('Authorization', passcode)
 
         res = open_url(request, data)
